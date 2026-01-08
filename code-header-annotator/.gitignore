@@ -97,3 +97,7 @@ verify_file.py
 /tmp/
 temp/
 tmp/
+
+# Allow real test suite (keeps the temp patterns above, but tracks tests/)
+!tests/
+!tests/**/*.py

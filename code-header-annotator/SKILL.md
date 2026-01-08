@@ -77,7 +77,7 @@ Use compact edges so the model can reliably follow relationships:
 
 - **Fixed size**: The header region is always **20 lines** for every file.
 - **High-signal**: One-line fields; compress lists; truncate long text.
-- **Indexing first**: Include the most “findable” info: exported/public API, key types, key functions, entrypoints.
+- **Indexing first**: Include the most "findable" info: exported/public API, key types, key functions, entrypoints.
 - **Addresses**: Use `Name@L<line>` for key symbols. Prefer:
   - Base class / interface declarations
   - Subclasses / concrete implementations
@@ -85,6 +85,7 @@ Use compact edges so the model can reliably follow relationships:
   - Factories/builders and registry lookups
   - CLI/web handlers and job entrypoints
 - **Section map**: Use `Index:` as a coarse table-of-contents with section anchors (e.g. `Imports@L..; Types@L..; API@L..; Main@L..`).
+- **Concrete names only**: Always use specific type/function/variable names, NEVER abstract descriptions.
 
 ## What To Capture (priority order)
 
@@ -94,6 +95,127 @@ Use compact edges so the model can reliably follow relationships:
 4. **Inheritance & extension points**: Base classes, subclasses, registries, plugin hooks.
 5. **Side effects / I-O**: DB/filesystem/network, global state, caches.
 6. **Constraints**: Important invariants, error modes, performance or security notes.
+
+## Critical Field Guidelines
+
+### Key types (MUST use concrete type names)
+
+**WRONG** - Abstract descriptions:
+```
+* Key types: Data models, utility functions, configuration objects
+```
+
+**RIGHT** - Concrete type names with line numbers:
+```
+* Key types: User@L15, Message@L42, Config@L89
+```
+
+**Why**: Abstract descriptions are useless for navigation. Concrete names allow `rg "class User"` or jumping to `L15` directly.
+
+### Dependencies (MUST list specific external dependencies)
+
+**WRONG** - Generic description:
+```
+* Dependencies: Uses external libraries and frameworks
+```
+
+**RIGHT** - Specific dependency list:
+```
+* Dependencies: React, lodash, axios, node:fs, @types/node
+```
+
+**For intra-file dependencies**: Use the Inheritance field or include inline references like `uses BaseHandler@L30`.
+
+### Public API (MUST specify exact exported symbols)
+
+**WRONG** - Vague description:
+```
+* Public API: Exports functions and classes
+```
+
+**RIGHT** - Exact export list:
+```
+* Public API: createUser(), getUserById(), User class, Config object
+```
+
+### Purpose (MUST be specific, not generic)
+
+**WRONG** - Generic description:
+```
+* Purpose: Implements utility functions for data processing
+```
+
+**RIGHT** - Specific responsibility:
+```
+* Purpose: Handles user authentication and session management with JWT tokens
+```
+
+## Examples and Anti-Examples
+
+### Bad Example (GLM4.7 style - too generic):
+```
+* @codex-header: v1
+* Path: src/auth.ts
+* Purpose: Authentication module for user management
+* Key types: Data models, configuration classes, utility types
+* Inheritance: Extends base classes and implements interfaces
+* Key funcs: Authentication functions, validation helpers
+* Entrypoints: Main entry points for the module
+* Public API: Exports various functions and classes
+* Dependencies: Uses external libraries and utilities
+```
+
+### Good Example (GPT5 style - concrete and navigable):
+```
+* @codex-header: v1
+* Path: src/auth.ts
+* Purpose: JWT-based authentication with refresh tokens and role-based access control
+* Key types: AuthConfig@L12, TokenPayload@L45, UserSession@L89
+* Inheritance: AuthHandler@L120->BaseHandler@L30, AuthService~>IAuthValidator@L200
+* Key funcs: generateToken@L234, validateToken@L267, refreshSession@L312
+* Entrypoints: login@L345, logout@L367, refreshToken@L389
+* Public API: AuthController class, createAuthMiddleware(), verifyToken()
+* Dependencies: jsonwebtoken@2.5.0, bcrypt, node:crypto, lodash/get
+```
+
+## Dependency Extraction Guidelines
+
+### What to include in Dependencies field
+
+1. **External packages/libraries**: List actual package names from import statements
+   - Python: `import pandas as pd`, `from sklearn.metrics import accuracy_score` → `pandas, scikit-learn`
+   - JS/TS: `import React from 'react'`, `import { AxiosInstance } from 'axios'` → `React, axios`
+   - Node.js built-ins: `node:fs`, `node:path`, `node:http`
+
+2. **Framework-specific dependencies**:
+   - React components: `React, react-dom, @types/react`
+   - Node.js APIs: `express, node:fs, node:http`
+   - Database: `mongoose, pg, sequelize`
+
+3. **Type-only imports** (important for TS):
+   - `import type { User } from './types'` → indicate this is a type dependency
+
+4. **Intra-file dependencies**:
+   - Use line references: `uses BaseValidator@L45, imports Config from './config'`
+
+### How to extract dependencies
+
+Scan the import/include section of the file and extract:
+- Package names (not just module paths)
+- Framework dependencies
+- Platform-specific APIs
+
+**Example extraction process**:
+```typescript
+import React from 'react'              → React
+import { useState, useEffect } from 'react'  → React
+import axios from 'axios'               → axios
+import { useRouter } from 'next/router'    → next/router
+import type { User } from './types'     → type: ./types/User
+import { Logger } from '../utils/logger'  → uses Logger@../utils/logger#L20
+```
+
+Result: `Dependencies: React, axios, next/router, type: ./types/User, uses Logger@../utils/logger#L20`
 
 ## Automation (recommended)
 
@@ -114,7 +236,40 @@ Notes:
 - Python uses `# ...` line comments so a real module docstring can remain the first statement.
 - Best-effort symbol extraction for common languages (Python/JS/TS/Go/Rust/Java/etc).
 - The verification script intelligently checks if files have incomplete auto-populated fields by analyzing the actual file content.
+- By default, re-running the script is **non-destructive** for manually/LLM-filled fields (e.g. `Purpose`, `Public API`): it preserves existing non-`TODO` values. Use `--refresh` to forcibly rebuild the header from scratch (may reset manual fields back to `TODO`).
 
 ## References
 
 - `code-header-annotator/references/header-format.md` (canonical header fields + goals)
+
+## Quality Checklist
+
+Before finalizing a header, verify:
+
+- [ ] **Key types**: Lists concrete type names (e.g., `User@L15`), NOT abstract descriptions (e.g., "data models")
+- [ ] **Key funcs**: Lists concrete function names (e.g., `login@L234`), NOT generic descriptions (e.g., "authentication functions")
+- [ ] **Dependencies**: Lists specific package names and external dependencies, NOT "uses external libraries"
+- [ ] **Public API**: Specifies exact exported symbols, NOT "exports functions and classes"
+- [ ] **Purpose**: Is specific and actionable, NOT generic like "utility module"
+- [ ] **Inheritance**: Uses relationship notation (`->`, `~>`, `+`) with concrete names, NOT "extends base classes"
+- [ ] **Addresses**: All named symbols include `@L<line>` line numbers
+- [ ] **Completeness**: No fields contain "TODO" that could have been filled from the file content
+- [ ] **Accuracy**: Line numbers actually point to the correct definitions
+- [ ] **Brevity**: Each field is concise (truncated if too long, not verbose prose)
+
+## Common Anti-Patterns to Avoid
+
+1. **Generic descriptions**: "handles data", "utility functions", "business logic"
+   - **Fix**: Be specific: "manages user CRUD operations", "validates JWT tokens", "processes payment transactions"
+
+2. **Missing line numbers**: `User` instead of `User@L15`
+   - **Fix**: Always add `@L<line>` for all concrete symbols
+
+3. **Vague dependencies**: "uses external libraries", "framework dependencies"
+   - **Fix**: List actual packages: "React, axios, lodash, node:fs"
+
+4. **Abstract type names**: "DataModel", "Helper", "Manager"
+   - **Fix**: Use actual type names from the code: "User", "AuthService", "PaymentProcessor"
+
+5. **Prose in summary fields**: "The purpose of this file is to implement authentication functionality"
+   - **Fix**: One-line summary: "JWT-based authentication with refresh tokens"

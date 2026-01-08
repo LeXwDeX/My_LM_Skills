@@ -8,7 +8,7 @@ import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Sequence, Tuple
+from typing import Dict, Iterable, List, Optional, Sequence, Tuple
 
 
 CODEX_MARKER = "@codex-header: v1"
@@ -224,16 +224,21 @@ def _split_prolog(lines: List[str], *, suffix: str) -> Tuple[List[str], List[str
     return prolog, lines[i:]
 
 
-def _strip_existing_codex_header(rest: List[str], path: Path) -> Tuple[List[str], bool]:
+def _split_existing_codex_header(
+    rest: List[str], path: Path
+) -> Tuple[Optional[List[str]], List[str], bool]:
     """
-    Remove an existing 20-line Codex header if present at the start of `rest`.
-    Return (new_rest, removed?).
+    If an existing 20-line Codex header is present at the start of `rest`, return:
+      (header_lines, rest_without_header, True)
+
+    Otherwise return:
+      (None, rest, False)
     """
     max_scan = min(len(rest), 60)
     scan_lines = rest[:max_scan]
     scan = "".join(scan_lines)
     if CODEX_MARKER not in scan:
-        return rest, False
+        return None, rest, False
 
     # If marker is present, only accept the invariant "header is the first 20 lines of rest".
     if len(rest) < HEADER_LINES:
@@ -242,13 +247,75 @@ def _strip_existing_codex_header(rest: List[str], path: Path) -> Tuple[List[str]
         )
 
     if any(CODEX_MARKER in ln for ln in rest[:HEADER_LINES]):
-        return rest[HEADER_LINES:], True
+        return rest[:HEADER_LINES], rest[HEADER_LINES:], True
 
     # Marker exists near top but not where we expect -> refuse to avoid duplicating headers.
     raise ValueError(
         f"found {CODEX_MARKER} near top but header is not the first {HEADER_LINES} lines; "
         f"manually normalize the header in {path}"
     )
+
+
+_HEADER_FIELD_PREFIXES: Tuple[str, ...] = (
+    "Path:",
+    "Purpose:",
+    "Key types:",
+    "Inheritance:",
+    "Key funcs:",
+    "Entrypoints:",
+    "Public API:",
+    "Inputs/Outputs:",
+    "Core flow:",
+    "Dependencies:",
+    "Error handling:",
+    "Config/env:",
+    "Side effects:",
+    "Performance:",
+    "Security:",
+    "Tests:",
+    "Known issues:",
+    "Index:",
+    "Last update:",
+)
+
+_RE_HEADER_PREFIX = re.compile(r"^\s*(?:/\*+|<!--)?\s*(?:\*+\s*)?(?:#|//|--)?\s*")
+_RE_HEADER_SUFFIX = re.compile(r"\s*(?:\*/|-->)\s*$")
+
+
+def _strip_header_comment_syntax(line: str) -> str:
+    s = line.rstrip("\n").rstrip("\r")
+    s = _RE_HEADER_SUFFIX.sub("", s)
+    s = _RE_HEADER_PREFIX.sub("", s)
+    return s.strip()
+
+
+def _parse_existing_header_fields(header_lines: List[str]) -> Dict[str, str]:
+    fields: Dict[str, str] = {}
+    for ln in header_lines:
+        clean = _strip_header_comment_syntax(ln)
+        for prefix in _HEADER_FIELD_PREFIXES:
+            if clean.startswith(prefix):
+                key = prefix[:-1]  # drop trailing ':'
+                fields[key] = clean[len(prefix) :].strip()
+                break
+    return fields
+
+
+def _is_placeholder(value: Optional[str]) -> bool:
+    if value is None:
+        return True
+    v = value.strip()
+    if not v:
+        return True
+    if v == "TODO":
+        return True
+    if v.startswith("TODO "):
+        return True
+    if v.startswith("TODO:"):
+        return True
+    if v.startswith("TODO;"):
+        return True
+    return False
 
 
 def _peek_py_module_docstring(lines: List[str]) -> Optional[str]:
@@ -721,42 +788,13 @@ def _scan_type_pairs(
     return out
 
 
-def _build_header_lines(
+def _render_header_lines(
     *,
     style: CommentStyle,
-    relpath: str,
-    purpose: str,
-    types: Sequence[str],
-    inheritance: Sequence[str],
-    funcs: Sequence[str],
-    entrypoints: Sequence[str],
-    index_hint: str,
+    fields: Sequence[str],
     max_width: int,
 ) -> List[str]:
-    today = _dt.date.today().isoformat()
-
-    fields = [
-        f"{CODEX_MARKER} | 20 lines | keep updated",
-        f"Path: {relpath}",
-        f"Purpose: {purpose or 'TODO'}",
-        f"Key types: {', '.join(types) if types else 'TODO'}",
-        f"Inheritance: {', '.join(inheritance) if inheritance else 'TODO'}",
-        f"Key funcs: {', '.join(funcs) if funcs else 'TODO'}",
-        f"Entrypoints: {', '.join(entrypoints) if entrypoints else 'TODO'}",
-        "Public API: TODO",
-        "Inputs/Outputs: TODO",
-        "Core flow: TODO",
-        "Dependencies: TODO",
-        "Error handling: TODO",
-        "Config/env: TODO",
-        "Side effects: TODO",
-        "Performance: TODO",
-        "Security: TODO",
-        "Tests: TODO",
-        "Known issues: TODO",
-        f"Index: {index_hint or 'TODO'}",
-        f"Last update: {today}",
-    ]
+    fields = list(fields)
 
     # Ensure exactly 20 lines for block style by placing start on line 1 and end on line 20.
     if style.kind == "block":
@@ -796,6 +834,7 @@ def annotate_file(
     index_hint: str,
     max_width: int,
     dry_run: bool,
+    refresh: bool,
     type_index: Optional[dict[str, List[Tuple[str, int]]]] = None,
 ) -> Tuple[bool, str]:
     style = _detect_comment_style(path)
@@ -815,10 +854,9 @@ def annotate_file(
         if doc:
             existing_doc_hint = doc
 
-    rest_wo_header, removed = (
-        _strip_existing_codex_header(rest, path)
-        if CODEX_MARKER in "".join(rest[:60])
-        else (rest, False)
+    existing_header, rest_wo_header, removed = _split_existing_codex_header(rest, path)
+    existing_fields = (
+        _parse_existing_header_fields(existing_header) if existing_header else {}
     )
 
     final_body_offset = len(prolog) + HEADER_LINES
@@ -829,17 +867,84 @@ def annotate_file(
         path, rest_wo_header, final_body_offset, type_index=type_index
     )
 
-    header = _build_header_lines(
-        style=style,
-        relpath=_relpath_for_header(path, root),
-        purpose=purpose or existing_doc_hint or "",
-        types=types,
-        inheritance=inheritance,
-        funcs=funcs,
-        entrypoints=entrypoints,
-        index_hint=index_hint,
-        max_width=max_width,
-    )
+    relpath = _relpath_for_header(path, root)
+    today = _dt.date.today().isoformat()
+
+    if refresh:
+        final_purpose = purpose or existing_doc_hint or "TODO"
+        public_api = "TODO"
+        inputs_outputs = "TODO"
+        core_flow = "TODO"
+        dependencies = "TODO"
+        error_handling = "TODO"
+        config_env = "TODO"
+        side_effects = "TODO"
+        performance = "TODO"
+        security = "TODO"
+        tests = "TODO"
+        known_issues = "TODO"
+        index_value = index_hint or "TODO"
+        last_update = today
+    else:
+        if purpose:
+            final_purpose = purpose
+        else:
+            existing_purpose = existing_fields.get("Purpose")
+            final_purpose = (
+                existing_purpose
+                if not _is_placeholder(existing_purpose)
+                else (existing_doc_hint or "TODO")
+            )
+
+        def keep_or_todo(key: str) -> str:
+            v = existing_fields.get(key)
+            return v if not _is_placeholder(v) else "TODO"
+
+        public_api = keep_or_todo("Public API")
+        inputs_outputs = keep_or_todo("Inputs/Outputs")
+        core_flow = keep_or_todo("Core flow")
+        dependencies = keep_or_todo("Dependencies")
+        error_handling = keep_or_todo("Error handling")
+        config_env = keep_or_todo("Config/env")
+        side_effects = keep_or_todo("Side effects")
+        performance = keep_or_todo("Performance")
+        security = keep_or_todo("Security")
+        tests = keep_or_todo("Tests")
+        known_issues = keep_or_todo("Known issues")
+
+        if index_hint:
+            index_value = index_hint
+        else:
+            existing_index = existing_fields.get("Index")
+            index_value = existing_index if not _is_placeholder(existing_index) else "TODO"
+
+        existing_last_update = existing_fields.get("Last update")
+        last_update = existing_last_update if not _is_placeholder(existing_last_update) else today
+
+    header_fields = [
+        f"{CODEX_MARKER} | 20 lines | keep updated",
+        f"Path: {relpath}",
+        f"Purpose: {final_purpose or 'TODO'}",
+        f"Key types: {', '.join(types) if types else 'TODO'}",
+        f"Inheritance: {', '.join(inheritance) if inheritance else 'TODO'}",
+        f"Key funcs: {', '.join(funcs) if funcs else 'TODO'}",
+        f"Entrypoints: {', '.join(entrypoints) if entrypoints else 'TODO'}",
+        f"Public API: {public_api}",
+        f"Inputs/Outputs: {inputs_outputs}",
+        f"Core flow: {core_flow}",
+        f"Dependencies: {dependencies}",
+        f"Error handling: {error_handling}",
+        f"Config/env: {config_env}",
+        f"Side effects: {side_effects}",
+        f"Performance: {performance}",
+        f"Security: {security}",
+        f"Tests: {tests}",
+        f"Known issues: {known_issues}",
+        f"Index: {index_value}",
+        f"Last update: {last_update}",
+    ]
+
+    header = _render_header_lines(style=style, fields=header_fields, max_width=max_width)
 
     new_lines = []
     new_lines.extend(prolog)
@@ -847,6 +952,17 @@ def annotate_file(
     new_lines.extend(rest_wo_header)
 
     new_raw = "".join(new_lines)
+    if not refresh and existing_header and new_raw != raw and last_update != today:
+        # Only bump Last update when we actually changed something else.
+        header_fields[-1] = f"Last update: {today}"
+        header = _render_header_lines(
+            style=style, fields=header_fields, max_width=max_width
+        )
+        new_lines = []
+        new_lines.extend(prolog)
+        new_lines.extend([ln if ln.endswith("\n") else ln + "\n" for ln in header])
+        new_lines.extend(rest_wo_header)
+        new_raw = "".join(new_lines)
     if new_raw == raw:
         return False, f"no-op: {path}"
 
@@ -884,11 +1000,7 @@ def _build_type_index(
         lines = raw.splitlines(keepends=True)
         suffix = path.suffix.lower()
         prolog, rest = _split_prolog(lines, suffix=suffix)
-        rest_wo_header, _ = (
-            _strip_existing_codex_header(rest, path)
-            if CODEX_MARKER in "".join(rest[:60])
-            else (rest, False)
-        )
+        _, rest_wo_header, _ = _split_existing_codex_header(rest, path)
 
         final_body_offset = len(prolog) + HEADER_LINES
         type_pairs = _scan_type_pairs(path, rest_wo_header, final_body_offset)
@@ -921,6 +1033,11 @@ def main(argv: Sequence[str]) -> int:
         "--index-hint",
         default="",
         help="Override Index line (e.g. Imports@L..; Types@L..; ...)",
+    )
+    parser.add_argument(
+        "--refresh",
+        action="store_true",
+        help="Rewrite header from scratch (may reset non-TODO manual fields back to TODO)",
     )
     parser.add_argument(
         "--resolve-parents",
@@ -965,6 +1082,7 @@ def main(argv: Sequence[str]) -> int:
                 index_hint=args.index_hint,
                 max_width=args.max_width,
                 dry_run=args.dry_run,
+                refresh=args.refresh,
                 type_index=type_index,
             )
             print(msg)

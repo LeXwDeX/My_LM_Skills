@@ -20,6 +20,7 @@ python scripts/annotate_code_headers.py <files-or-dirs> --root <repo-root> --res
 - `--resolve-parents`: 尝试解析外部父类为跨文件引用（如 `Base@path/to/file.py#L42`）
 - `--purpose`: 覆盖 Purpose 行（否则从现有文档字符串中提取）
 - `--index-hint`: 覆盖 Index 行
+- `--refresh`: 强制从零重建头注释（可能把已填写的手工字段重置为 TODO）
 - `--max-width`: 截断每行头注释到此宽度（默认 120）
 - `--dry-run`: 仅打印操作，不实际写入
 - `--verify`: 处理完成后自动运行验证

@@ -61,10 +61,13 @@
 **改动**:
 - 添加 `--verify` 选项，允许在处理完成后自动运行验证
 - 更新帮助信息
+- 默认保留已存在头注释中非 `TODO` 的手工字段（如 `Purpose`、`Public API`），避免中断/续跑时把已完成内容重置为 `TODO`
+- 新增 `--refresh` 选项，用于显式“从零重建”头注释（会把手工字段重置为 `TODO`）
 
 **新增命令行参数**:
 ```bash
 --verify    Run verification after completion (checks for incomplete auto-populated fields)
+--refresh   Rewrite header from scratch (may reset non-TODO manual fields back to TODO)
 ```
 
 ### 2. 技能文档
