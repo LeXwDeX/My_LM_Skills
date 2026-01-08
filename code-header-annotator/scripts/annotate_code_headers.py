@@ -46,30 +46,76 @@ COMMENT_STYLES_BY_SUFFIX = {
     ".sql": CommentStyle(kind="line", line_prefix="-- "),
     ".lua": CommentStyle(kind="line", line_prefix="-- "),
     # C-like / JS-like (block comment)
-    ".c": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".h": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".cc": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".cpp": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".hpp": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".cs": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".java": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".kt": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".swift": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".js": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".jsx": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".ts": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".tsx": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".go": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".rs": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".php": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".css": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".scss": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
-    ".less": CommentStyle(kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"),
+    ".c": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".h": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".cc": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".cpp": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".hpp": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".cs": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".java": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".kt": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".swift": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".js": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".jsx": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".ts": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".tsx": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".go": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".rs": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".php": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".css": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".scss": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
+    ".less": CommentStyle(
+        kind="block", block_start="/*", block_line_prefix=" * ", block_end=" */"
+    ),
     # HTML/XML
-    ".html": CommentStyle(kind="block", block_start="<!--", block_line_prefix="  ", block_end="-->"),
-    ".htm": CommentStyle(kind="block", block_start="<!--", block_line_prefix="  ", block_end="-->"),
-    ".xml": CommentStyle(kind="block", block_start="<!--", block_line_prefix="  ", block_end="-->"),
-    ".vue": CommentStyle(kind="block", block_start="<!--", block_line_prefix="  ", block_end="-->"),
+    ".html": CommentStyle(
+        kind="block", block_start="<!--", block_line_prefix="  ", block_end="-->"
+    ),
+    ".htm": CommentStyle(
+        kind="block", block_start="<!--", block_line_prefix="  ", block_end="-->"
+    ),
+    ".xml": CommentStyle(
+        kind="block", block_start="<!--", block_line_prefix="  ", block_end="-->"
+    ),
+    ".vue": CommentStyle(
+        kind="block", block_start="<!--", block_line_prefix="  ", block_end="-->"
+    ),
 }
 
 
@@ -152,8 +198,12 @@ def _split_prolog(lines: List[str], *, suffix: str) -> Tuple[List[str], List[str
 
     # Go build tags must be at the top of file before other content.
     # Keep consecutive build-tag lines and ensure there is a blank line after them.
-    if i < len(lines) and (lines[i].startswith("//go:build") or lines[i].startswith("// +build")):
-        while i < len(lines) and (lines[i].startswith("//go:build") or lines[i].startswith("// +build")):
+    if i < len(lines) and (
+        lines[i].startswith("//go:build") or lines[i].startswith("// +build")
+    ):
+        while i < len(lines) and (
+            lines[i].startswith("//go:build") or lines[i].startswith("// +build")
+        ):
             prolog.append(lines[i])
             i += 1
         if i < len(lines) and lines[i].strip() == "":
@@ -187,7 +237,9 @@ def _strip_existing_codex_header(rest: List[str], path: Path) -> Tuple[List[str]
 
     # If marker is present, only accept the invariant "header is the first 20 lines of rest".
     if len(rest) < HEADER_LINES:
-        raise ValueError(f"found {CODEX_MARKER} but file is shorter than {HEADER_LINES} lines")
+        raise ValueError(
+            f"found {CODEX_MARKER} but file is shorter than {HEADER_LINES} lines"
+        )
 
     if any(CODEX_MARKER in ln for ln in rest[:HEADER_LINES]):
         return rest[HEADER_LINES:], True
@@ -236,11 +288,15 @@ def _peek_py_module_docstring(lines: List[str]) -> Optional[str]:
 _RE_PY_DEF = re.compile(r"^\s*def\s+([A-Za-z_]\w*)\s*\(")
 _RE_PY_CLASS = re.compile(r"^\s*class\s+([A-Za-z_]\w*)\s*[\(:]")
 _RE_PY_INHERIT = re.compile(r"^\s*class\s+([A-Za-z_]\w*)\s*\(([^)]*)\)\s*:")
-_RE_JS_CLASS = re.compile(r"^\s*export\s+default\s+class\s+([A-Za-z_$][\w$]*)\b|^\s*export\s+class\s+([A-Za-z_$][\w$]*)\b|^\s*class\s+([A-Za-z_$][\w$]*)\b")
+_RE_JS_CLASS = re.compile(
+    r"^\s*export\s+default\s+class\s+([A-Za-z_$][\w$]*)\b|^\s*export\s+class\s+([A-Za-z_$][\w$]*)\b|^\s*class\s+([A-Za-z_$][\w$]*)\b"
+)
 _RE_JS_INHERIT = re.compile(
     r"^\s*(?:export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)\s+extends\s+([A-Za-z_$][\w$]*)"
 )
-_RE_TS_CLASS = re.compile(r"^\s*(?:export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)\b")
+_RE_TS_CLASS = re.compile(
+    r"^\s*(?:export\s+)?(?:default\s+)?(?:abstract\s+)?class\s+([A-Za-z_$][\w$]*)\b"
+)
 _RE_TS_INTERFACE = re.compile(r"^\s*(?:export\s+)?interface\s+([A-Za-z_$][\w$]*)\b")
 _RE_TS_ENUM = re.compile(r"^\s*(?:export\s+)?enum\s+([A-Za-z_$][\w$]*)\b")
 _RE_TS_TYPE_ALIAS = re.compile(r"^\s*(?:export\s+)?type\s+([A-Za-z_$][\w$]*)\b")
@@ -254,8 +310,12 @@ _RE_GO_TYPE = re.compile(r"^\s*type\s+([A-Za-z_]\w*)\s+(struct|interface)\b")
 _RE_GO_FUNC = re.compile(r"^\s*func\s+\(?[A-Za-z_*\w]*\)?\s*([A-Za-z_]\w*)\s*\(")
 _RE_RS_ITEM = re.compile(r"^\s*(?:pub\s+)?(struct|enum|trait)\s+([A-Za-z_]\w*)\b")
 _RE_RS_FN = re.compile(r"^\s*(?:pub\s+)?fn\s+([A-Za-z_]\w*)\s*\(")
-_RE_RS_IMPL_FOR = re.compile(r"^\s*impl\s+(?:<[^>]+>\s+)?([A-Za-z_]\w*)\s+for\s+([A-Za-z_]\w*)\b")
-_RE_JAVA_TYPE = re.compile(r"^\s*(?:public|protected|private)?\s*(?:abstract|final)?\s*(class|interface|enum)\s+([A-Za-z_]\w*)\b")
+_RE_RS_IMPL_FOR = re.compile(
+    r"^\s*impl\s+(?:<[^>]+>\s+)?([A-Za-z_]\w*)\s+for\s+([A-Za-z_]\w*)\b"
+)
+_RE_JAVA_TYPE = re.compile(
+    r"^\s*(?:public|protected|private)?\s*(?:abstract|final)?\s*(class|interface|enum)\s+([A-Za-z_]\w*)\b"
+)
 _RE_JAVA_INHERIT = re.compile(
     r"^\s*(?:public|protected|private)?\s*(?:abstract|final)?\s*class\s+([A-Za-z_]\w*)\s+extends\s+([A-Za-z_]\w*)\b"
 )
@@ -341,7 +401,12 @@ def _extract_inheritance(
                 type_line_by_name[m.group(1)] = final_body_offset + idx
         elif suffix in {".js", ".jsx", ".ts", ".tsx"}:
             if suffix in {".ts", ".tsx"}:
-                m = _RE_TS_CLASS.match(line) or _RE_TS_INTERFACE.match(line) or _RE_TS_ENUM.match(line) or _RE_TS_TYPE_ALIAS.match(line)
+                m = (
+                    _RE_TS_CLASS.match(line)
+                    or _RE_TS_INTERFACE.match(line)
+                    or _RE_TS_ENUM.match(line)
+                    or _RE_TS_TYPE_ALIAS.match(line)
+                )
                 if m:
                     type_line_by_name[m.group(1)] = final_body_offset + idx
             else:
@@ -371,7 +436,9 @@ def _extract_inheritance(
             m = _RE_PY_INHERIT.match(line)
             if m:
                 child = m.group(1)
-                raw_bases = [_clean_base_name(p) for p in _split_supertype_list(m.group(2))]
+                raw_bases = [
+                    _clean_base_name(p) for p in _split_supertype_list(m.group(2))
+                ]
                 raw_bases = [b for b in raw_bases if b]
                 if raw_bases:
                     bases.append(("->", raw_bases[0]))
@@ -385,7 +452,9 @@ def _extract_inheritance(
             m = _RE_TS_IMPLEMENTS.match(line)
             if m:
                 child = m.group(1)
-                for iface in [_clean_base_name(p) for p in _split_supertype_list(m.group(2))]:
+                for iface in [
+                    _clean_base_name(p) for p in _split_supertype_list(m.group(2))
+                ]:
                     if iface:
                         bases.append(("~>", iface))
         elif suffix == ".java":
@@ -396,13 +465,17 @@ def _extract_inheritance(
             m = _RE_JAVA_IMPLEMENTS.match(line)
             if m:
                 child = m.group(1)
-                for iface in [_clean_base_name(p) for p in _split_supertype_list(m.group(2))]:
+                for iface in [
+                    _clean_base_name(p) for p in _split_supertype_list(m.group(2))
+                ]:
                     if iface:
                         bases.append(("~>", iface))
             m = _RE_JAVA_INTERFACE_EXTENDS.match(line)
             if m:
                 child = m.group(1)
-                for parent in [_clean_base_name(p) for p in _split_supertype_list(m.group(2))]:
+                for parent in [
+                    _clean_base_name(p) for p in _split_supertype_list(m.group(2))
+                ]:
                     if parent:
                         bases.append(("->", parent))
         elif suffix == ".kt":
@@ -476,7 +549,9 @@ def _extract_inheritance(
         for rel, parent in bases:
             if not parent:
                 continue
-            parent_ref = _resolve_type_ref(parent, type_line_by_name=type_line_by_name, type_index=type_index)
+            parent_ref = _resolve_type_ref(
+                parent, type_line_by_name=type_line_by_name, type_index=type_index
+            )
             edges.append(f"{child_ref}{rel}{parent_ref}")
             if len(edges) >= MAX_INHERIT_EDGES:
                 return edges
@@ -484,7 +559,9 @@ def _extract_inheritance(
     return edges
 
 
-def _extract_symbols(path: Path, body_lines: List[str], final_body_offset: int) -> Tuple[List[str], List[str], List[str]]:
+def _extract_symbols(
+    path: Path, body_lines: List[str], final_body_offset: int
+) -> Tuple[List[str], List[str], List[str]]:
     """
     Return (types, funcs, entrypoints) as compact strings like `Name@L123`.
     `final_body_offset` is the number of lines before body in the final file.
@@ -514,7 +591,12 @@ def _extract_symbols(path: Path, body_lines: List[str], final_body_offset: int) 
                 entrypoints.append(("__main__", final_body_offset + idx))
         elif suffix in {".js", ".jsx", ".ts", ".tsx"}:
             if suffix in {".ts", ".tsx"}:
-                m = _RE_TS_CLASS.match(line) or _RE_TS_INTERFACE.match(line) or _RE_TS_ENUM.match(line) or _RE_TS_TYPE_ALIAS.match(line)
+                m = (
+                    _RE_TS_CLASS.match(line)
+                    or _RE_TS_INTERFACE.match(line)
+                    or _RE_TS_ENUM.match(line)
+                    or _RE_TS_TYPE_ALIAS.match(line)
+                )
                 if m:
                     types.append((m.group(1), final_body_offset + idx))
                     continue
@@ -582,7 +664,9 @@ def _extract_symbols(path: Path, body_lines: List[str], final_body_offset: int) 
     return fmt(types, 4), fmt(funcs, 6), fmt(entrypoints, 2)
 
 
-def _scan_type_pairs(path: Path, body_lines: List[str], final_body_offset: int) -> List[Tuple[str, int]]:
+def _scan_type_pairs(
+    path: Path, body_lines: List[str], final_body_offset: int
+) -> List[Tuple[str, int]]:
     """
     Return all type-like declarations as (name, final_line_number).
     This is used for cross-file parent resolution and should not be aggressively limited.
@@ -600,7 +684,12 @@ def _scan_type_pairs(path: Path, body_lines: List[str], final_body_offset: int) 
                 out.append((m.group(1), final_body_offset + idx))
         elif suffix in {".js", ".jsx", ".ts", ".tsx"}:
             if suffix in {".ts", ".tsx"}:
-                m = _RE_TS_CLASS.match(line) or _RE_TS_INTERFACE.match(line) or _RE_TS_ENUM.match(line) or _RE_TS_TYPE_ALIAS.match(line)
+                m = (
+                    _RE_TS_CLASS.match(line)
+                    or _RE_TS_INTERFACE.match(line)
+                    or _RE_TS_ENUM.match(line)
+                    or _RE_TS_TYPE_ALIAS.match(line)
+                )
                 if m:
                     out.append((m.group(1), final_body_offset + idx))
             else:
@@ -683,7 +772,11 @@ def _build_header_lines(
         rendered.append(f"{style.block_start} {_truncate(fields[0], max_width)}")
         for f in fields[1:-1]:
             rendered.append(style.block_line_prefix + _truncate(f, max_width))
-        rendered.append(style.block_line_prefix + _truncate(fields[-1], max_width) + f" {style.block_end}")
+        rendered.append(
+            style.block_line_prefix
+            + _truncate(fields[-1], max_width)
+            + f" {style.block_end}"
+        )
         return rendered
 
     # line comment style: 20 lines with prefix
@@ -722,11 +815,19 @@ def annotate_file(
         if doc:
             existing_doc_hint = doc
 
-    rest_wo_header, removed = _strip_existing_codex_header(rest, path) if CODEX_MARKER in "".join(rest[:60]) else (rest, False)
+    rest_wo_header, removed = (
+        _strip_existing_codex_header(rest, path)
+        if CODEX_MARKER in "".join(rest[:60])
+        else (rest, False)
+    )
 
     final_body_offset = len(prolog) + HEADER_LINES
-    types, funcs, entrypoints = _extract_symbols(path, rest_wo_header, final_body_offset)
-    inheritance = _extract_inheritance(path, rest_wo_header, final_body_offset, type_index=type_index)
+    types, funcs, entrypoints = _extract_symbols(
+        path, rest_wo_header, final_body_offset
+    )
+    inheritance = _extract_inheritance(
+        path, rest_wo_header, final_body_offset, type_index=type_index
+    )
 
     header = _build_header_lines(
         style=style,
@@ -766,7 +867,9 @@ def _iter_files(args_files: Sequence[str]) -> Iterable[Path]:
             yield p
 
 
-def _build_type_index(paths: Sequence[Path], *, root: Path) -> dict[str, List[Tuple[str, int]]]:
+def _build_type_index(
+    paths: Sequence[Path], *, root: Path
+) -> dict[str, List[Tuple[str, int]]]:
     """
     Best-effort index: type name -> [(relpath, final_line_number), ...].
     Line numbers are computed as if the file has the fixed 20-line header in place.
@@ -781,7 +884,11 @@ def _build_type_index(paths: Sequence[Path], *, root: Path) -> dict[str, List[Tu
         lines = raw.splitlines(keepends=True)
         suffix = path.suffix.lower()
         prolog, rest = _split_prolog(lines, suffix=suffix)
-        rest_wo_header, _ = _strip_existing_codex_header(rest, path) if CODEX_MARKER in "".join(rest[:60]) else (rest, False)
+        rest_wo_header, _ = (
+            _strip_existing_codex_header(rest, path)
+            if CODEX_MARKER in "".join(rest[:60])
+            else (rest, False)
+        )
 
         final_body_offset = len(prolog) + HEADER_LINES
         type_pairs = _scan_type_pairs(path, rest_wo_header, final_body_offset)
@@ -802,12 +909,38 @@ def main(argv: Sequence[str]) -> int:
         )
     )
     parser.add_argument("files", nargs="+", help="File(s) or directory(ies) to process")
-    parser.add_argument("--root", default=".", help="Repo root used to compute relative Path in header")
-    parser.add_argument("--purpose", default="", help="Override Purpose line (otherwise best-effort from existing docstring)")
-    parser.add_argument("--index-hint", default="", help="Override Index line (e.g. Imports@L..; Types@L..; ...)")
-    parser.add_argument("--resolve-parents", action="store_true", help="Try to resolve external parents as Name@path#L.. in Inheritance")
-    parser.add_argument("--max-width", type=int, default=DEFAULT_MAX_WIDTH, help="Truncate each header line to this width")
-    parser.add_argument("--dry-run", action="store_true", help="Do not write; only print actions")
+    parser.add_argument(
+        "--root", default=".", help="Repo root used to compute relative Path in header"
+    )
+    parser.add_argument(
+        "--purpose",
+        default="",
+        help="Override Purpose line (otherwise best-effort from existing docstring)",
+    )
+    parser.add_argument(
+        "--index-hint",
+        default="",
+        help="Override Index line (e.g. Imports@L..; Types@L..; ...)",
+    )
+    parser.add_argument(
+        "--resolve-parents",
+        action="store_true",
+        help="Try to resolve external parents as Name@path#L.. in Inheritance",
+    )
+    parser.add_argument(
+        "--max-width",
+        type=int,
+        default=DEFAULT_MAX_WIDTH,
+        help="Truncate each header line to this width",
+    )
+    parser.add_argument(
+        "--dry-run", action="store_true", help="Do not write; only print actions"
+    )
+    parser.add_argument(
+        "--verify",
+        action="store_true",
+        help="Run verification after completion (checks for incomplete auto-populated fields)",
+    )
     args = parser.parse_args(argv)
 
     root = Path(args.root)
@@ -818,7 +951,9 @@ def main(argv: Sequence[str]) -> int:
             print(f"skip (missing): {p}", file=sys.stderr)
             continue
         input_paths.append(p)
-    type_index = _build_type_index(input_paths, root=root) if args.resolve_parents else None
+    type_index = (
+        _build_type_index(input_paths, root=root) if args.resolve_parents else None
+    )
 
     changed = 0
     for path in input_paths:
@@ -842,6 +977,22 @@ def main(argv: Sequence[str]) -> int:
         print(f"dry-run: {changed} file(s) would change", file=sys.stderr)
     else:
         print(f"done: {changed} file(s) changed", file=sys.stderr)
+
+    # Run verification if requested
+    if args.verify and not args.dry_run and changed > 0:
+        print("\nRunning verification...", file=sys.stderr)
+        from importlib import resources
+        import subprocess
+
+        # Import and run check_incomplete_headers.py
+        check_script = Path(__file__).parent / "check_incomplete_headers.py"
+        if check_script.exists():
+            cmd = [sys.executable, str(check_script), *args.files, "--root", args.root]
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            print(result.stdout, end="")
+            if result.stderr:
+                print(result.stderr, end="", file=sys.stderr)
+            return result.returncode
 
     return 0
 

@@ -10,7 +10,7 @@ Maintain a **fixed 20-line header region** per code file (marked by `@codex-head
 ## Workflow (per file)
 
 1. **Preserve prolog lines**
-   - Keep any required “must-be-first” lines intact (e.g. shebang, Python encoding cookie, Go build tags, XML declaration, Rust `#![...]` inner attributes).
+   - Keep any required "must-be-first" lines intact (e.g. shebang, Python encoding cookie, Go build tags, XML declaration, Rust `#![...]` inner attributes).
 2. **Ensure the header exists and is exactly 20 lines**
    - Insert a new header if missing; otherwise update the existing one.
    - Always keep the marker `@codex-header: v1` in the header.
@@ -21,6 +21,19 @@ Maintain a **fixed 20-line header region** per code file (marked by `@codex-head
    - If unsure, write `TODO` (never hallucinate line numbers or APIs).
 5. **Verify addresses**
    - Ensure every `Name@L123` points to the correct definition line in the updated file.
+
+## Completion Verification (required)
+
+After processing all files, **always run the verification step** to ensure all auto-populated fields are complete:
+
+`python code-header-annotator/scripts/check_incomplete_headers.py <files-or-dirs> --root <repo-root>`
+
+This script checks for incomplete auto-populated fields (Key types, Key funcs, Entrypoints, Index) that should have been filled by the annotation script but weren't (e.g., due to tool crashes or interruptions).
+
+If incomplete files are found, re-process them:
+`python code-header-annotator/scripts/annotate_code_headers.py <incomplete-files> --root <repo-root>`
+
+Then re-run the verification until all headers are complete.
 
 ## Use The Header As The Primary Index (reading mode)
 
@@ -88,10 +101,19 @@ Use the bundled script to insert/update headers and pre-fill symbol indexes (the
 
 `python code-header-annotator/scripts/annotate_code_headers.py <files-or-dirs> --root <repo-root> --resolve-parents`
 
+**Always run verification after processing** to ensure all auto-populated fields are complete:
+
+`python code-header-annotator/scripts/check_incomplete_headers.py <files-or-dirs> --root <repo-root>`
+
+Or use the `--verify` flag to run verification automatically:
+
+`python code-header-annotator/scripts/annotate_code_headers.py <files-or-dirs> --root <repo-root> --resolve-parents --verify`
+
 Notes:
 - Skips file types without reliable comments (e.g. `.json`).
 - Python uses `# ...` line comments so a real module docstring can remain the first statement.
 - Best-effort symbol extraction for common languages (Python/JS/TS/Go/Rust/Java/etc).
+- The verification script intelligently checks if files have incomplete auto-populated fields by analyzing the actual file content.
 
 ## References
 
