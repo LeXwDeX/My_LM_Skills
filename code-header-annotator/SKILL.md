@@ -111,6 +111,67 @@ This creates/updates `AGENTS.md` in the repo root with:
 python code-header-annotator/scripts/annotate_code_headers.py <files> --root <repo-root> --resolve-parents --verify --update-agents-md
 ```
 
+## Critical: Update Index on File Changes
+
+**MANDATORY**: When this skill is active, you MUST maintain the header index **every time you modify a file**.
+
+### Index Maintenance Rules
+
+1. **After every file edit** - Update the affected file's header:
+   - Add new symbols with their correct line numbers
+   - Remove deleted symbols from the header
+   - Update `Purpose` if file responsibility changed
+   - Update `Public API` if exports changed
+   - Update `Inheritance` if relationships changed
+
+2. **After code changes** - Adjust line numbers:
+   - Moving code changes line numbers → update all affected `@L<line>` addresses
+   - Insertions/deletions shift subsequent lines → recalculate and update addresses
+   - Check `Index:` section anchors and update if sections moved
+
+3. **After adding new files** - Always add headers:
+   - Any new source file should get a 20-line header
+   - Include all concrete symbols with correct line numbers
+   - Set `TODO` for fields that need manual completion
+
+4. **Before committing/pushing** - Final verification:
+   - Run `check_incomplete_headers.py` to ensure no incomplete fields
+   - Re-run `annotate_code_headers.py` with `--verify` flag
+   - Fix any line number mismatches or missing symbols
+
+### Anti-Pattern: Stale Indexes
+
+**Never do this**:
+- Modify code without updating the header
+- Leave `TODO` in fields that are now known
+- Ignore line number drift after refactoring
+- Add new files without headers
+
+**Always do this**:
+- Update header in the same edit as code changes
+- Run verification after batch changes
+- Treat the header as live documentation, not one-time annotation
+
+### Verification Workflow
+
+For any codebase modification task:
+
+```bash
+# 1. Make your code changes
+# 2. Update headers for modified files
+python code-header-annotator/scripts/annotate_code_headers.py <modified-files> --root <repo-root> --resolve-parents
+
+# 3. Verify no incomplete fields
+python code-header-annotator/scripts/check_incomplete_headers.py <modified-files> --root <repo-root>
+
+# 4. If incomplete, re-process
+python code-header-annotator/scripts/annotate_code_headers.py <incomplete-files> --root <repo-root>
+
+# 5. Repeat until clean
+```
+
+**Key principle**: The header index must always reflect the current state of the file. A stale index is worse than no index because it misleads navigation.
+
 ## Core Rules
 
 - **Fixed size**: Always 20 lines per file

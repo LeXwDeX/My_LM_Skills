@@ -5,6 +5,54 @@
 - **Concrete names only**: Always use specific type/function/variable names, NEVER abstract descriptions
 - **Addresses required**: All concrete symbols must include `@L<line>` line numbers
 - **High-signal**: One-line fields, compress lists, truncate long text
+- **Always maintain index**: Update headers immediately after any file modification
+
+## Index Maintenance (MANDATORY)
+
+When this skill is active, you MUST maintain the header index **every time you modify a file**.
+
+### When to Update
+
+| Action | Update Required |
+|--------|-----------------|
+| Add new class/function | Add to `Key types` / `Key funcs` with `@L<line>` |
+| Delete class/function | Remove from header fields |
+| Rename symbol | Update name in all relevant header fields |
+| Move code (line shifts) | Recalculate and update all `@L<line>` addresses |
+| Change file responsibility | Update `Purpose` field |
+| Change exports | Update `Public API` field |
+| Change inheritance | Update `Inheritance` field |
+| Add new source file | Create new 20-line header |
+
+### How to Update
+
+1. **In the same edit** as code changes, update the header
+2. **Verify line numbers** by checking the actual line positions in the file
+3. **Run verification** after batch changes:
+   ```bash
+   python scripts/check_incomplete_headers.py <files> --root .
+   ```
+
+### Anti-Pattern: Stale Indexes
+
+**NEVER**:
+- Modify code without updating the header
+- Leave `TODO` in fields that are now known
+- Ignore line number drift after refactoring
+- Add new files without headers
+
+**ALWAYS**:
+- Update header immediately after code changes
+- Verify addresses point to correct lines
+- Run `check_incomplete_headers.py` after modifications
+- Treat headers as live, accurate documentation
+
+### Quality Checklist Addition
+
+- [ ] **Index accuracy**: All `@L<line>` addresses point to correct definitions
+- [ ] **No stale entries**: Deleted symbols removed from header
+- [ ] **New symbols added**: All new types/functions included
+- [ ] **Line drift fixed**: Addresses updated after code movement
 
 ## Header Fields Priority
 

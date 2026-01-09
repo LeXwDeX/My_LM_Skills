@@ -202,3 +202,196 @@
 ```
 * Dependencies: jsonwebtoken, bcrypt, node:crypto
 ```
+
+## Index Maintenance Examples
+
+### Scenario 1: Adding a New Function
+
+**Before**:
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/user.ts
+ * Key types: User@L15
+ * Key funcs: getUserById@L45
+ * ...
+ */
+```
+
+**Code change**: Add `deleteUser@L89` function at line 89
+
+**After** (required update):
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/user.ts
+ * Key types: User@L15
+ * Key funcs: getUserById@L45, deleteUser@L89
+ * ...
+ */
+```
+
+### Scenario 2: Deleting a Function
+
+**Before**:
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/user.ts
+ * Key funcs: getUserById@L45, updateUser@L67, deleteUser@L89
+ * ...
+ */
+```
+
+**Code change**: Delete `deleteUser@L89` function
+
+**After** (required update):
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/user.ts
+ * Key funcs: getUserById@L45, updateUser@L67
+ * ...
+ */
+```
+
+### Scenario 3: Line Number Drift
+
+**Before** (original):
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/auth.ts
+ * Key types: AuthConfig@L12, TokenPayload@L45
+ * Key funcs: generateToken@L67, validateToken@L89
+ * ...
+ */
+```
+
+**Code change**: Insert 10 new lines before line 67
+
+**After** (required update):
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/auth.ts
+ * Key types: AuthConfig@L12, TokenPayload@L45
+ * Key funcs: generateToken@L77, validateToken@L99  ← Line numbers shifted by +10
+ * ...
+ */
+```
+
+### Scenario 4: Adding a New File
+
+**Code change**: Create new file `src/payment.ts`
+
+**Required** (always add header):
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/payment.ts
+ * Purpose: Handles payment processing with Stripe integration
+ * Key types: Payment@L12, PaymentResult@L34
+ * Key funcs: processPayment@L56, refundPayment@L78
+ * Entrypoints: handleWebhook@L90
+ * Public API: processPayment(), refundPayment(), Payment class
+ * Dependencies: stripe, node:crypto
+ * ...
+ * Last update: 2026-01-09 */
+```
+
+### Scenario 5: Renaming a Symbol
+
+**Before**:
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/user.ts
+ * Key types: User@L15
+ * Key funcs: createUser@L45
+ * ...
+ */
+```
+
+**Code change**: Rename `createUser` to `newUser` at line 45
+
+**After** (required update):
+```typescript
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/user.ts
+ * Key types: User@L15
+ * Key funcs: newUser@L45  ← Name updated
+ * ...
+ */
+```
+
+## Common Maintenance Mistakes
+
+### Mistake 1: Code Change Without Header Update
+
+**Wrong**:
+```typescript
+// Add new function at line 100
+export function calculateMetrics() { ... }
+// Header still shows Key funcs: processData@L50
+
+// Result: Header is stale and misleading
+```
+
+**Right**:
+```typescript
+// Add new function at line 100
+export function calculateMetrics() { ... }
+
+// Immediately update header
+// Key funcs: processData@L50, calculateMetrics@L100
+```
+
+### Mistake 2: Ignoring Line Drift
+
+**Wrong**:
+```typescript
+// Insert 5 lines before line 67
+// Header still shows Key funcs: generateToken@L67
+
+// Result: generateToken is now at line 72, but header says 67
+```
+
+**Right**:
+```typescript
+// After inserting 5 lines
+// Update all affected line numbers
+// Key funcs: generateToken@L72 (shifted by +5), validateToken@L94
+```
+
+### Mistake 3: TODO Left Behind
+
+**Wrong**:
+```typescript
+// Added User class at line 25 earlier
+// Header still shows Key types: TODO
+
+// Result: Known information not reflected in header
+```
+
+**Right**:
+```typescript
+// After adding User class at line 25
+// Update header immediately
+// Key types: User@L25
+```
+
+### Mistake 4: New File Without Header
+
+**Wrong**:
+```typescript
+// Created new file src/utils.ts
+// No header added
+
+// Result: File is not indexed, cannot be found via navigation
+```
+
+**Right**:
+```typescript
+// Created new file src/utils.ts
+// Always add 20-line header
+/* @codex-header: v1 | 20 lines | keep updated
+ * Path: src/utils.ts
+ * Purpose: Utility functions for data validation and formatting
+ * Key types: Validator@L12, Formatter@L34
+ * Key funcs: validate@L56, format@L78
+ * ...
+ */
+```
