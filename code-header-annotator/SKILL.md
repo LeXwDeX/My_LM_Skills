@@ -88,6 +88,29 @@ python code-header-annotator/scripts/annotate_code_headers.py <files-or-dirs> --
 - `--resolve-parents` - Resolve external parents to cross-file references
 - Default is non-destructive: preserves existing non-TODO manual fields
 
+## AGENTS.md Integration
+
+For AI-optimized navigation, generate an AGENTS.md file that guides LLMs to read only file headers first:
+
+```bash
+python code-header-annotator/scripts/annotate_code_headers.py <files> --root <repo-root> --update-agents-md
+```
+
+This creates/updates `AGENTS.md` in the repo root with:
+- **Reading pattern instructions**: Read first 20 lines only, then jump to specific lines using `@L<line>` syntax
+- **Indexed table**: All annotated files with their purposes and key symbols (types, functions)
+- **Navigation syntax reference**: How to use `Name@L<line>` addressing for fast navigation
+
+**Why AGENTS.md?**
+- Reduces LLM context bloat by teaching it to read headers first
+- Provides a quick overview of all annotated files without reading each one
+- Improves output accuracy by focusing on structure before diving into implementation
+
+**Combined usage**:
+```bash
+python code-header-annotator/scripts/annotate_code_headers.py <files> --root <repo-root> --resolve-parents --verify --update-agents-md
+```
+
 ## Core Rules
 
 - **Fixed size**: Always 20 lines per file
